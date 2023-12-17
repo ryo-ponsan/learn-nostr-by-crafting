@@ -9,11 +9,12 @@ const {
 } = require("nostr-tools");
 require("websocket-polyfill");
 require('dotenv').config();
+const OpenAI = require('openai');
 
 /* Bot用の秘密鍵をここに設定 */
 const BOT_PRIVATE_KEY_HEX = process.env.BOT_PRIVATE_KEY_HEX;
-
 const relayUrl = "wss://relay-jp.nostr.wirednet.jp";
+const openai = new OpenAI(process.env.OPENAI_API_KEY);
 // const relayUrl = "wss://r.kojira.io";
 
 /**
@@ -77,6 +78,24 @@ const isSafeToReply = ({ pubkey, created_at }) => {
   return true;
 }
 
+// OpenAI APIを呼び出して返答を生成する関数
+const getOpenAIResponse = async (inputText) => {
+  try {
+    const completion = await openai.chat.completions.create({
+      messages: [
+        { role: "system", content: "You are a helpful assistant." },
+        { role: "user", content: inputText }
+      ],
+      model: "gpt-3.5-turbo",
+    });
+
+    return completion.choices[0].message.content.trim();
+  } catch (error) {
+    console.error('Error calling OpenAI API:', error);
+    return "I'm sorry, I couldn't process your request.";
+  }
+};
+
 // メイン関数
 const main = async () => {
   const relay = relayInit(relayUrl);
@@ -92,11 +111,14 @@ const main = async () => {
   const botPubkey = getPublicKey(BOT_PRIVATE_KEY_HEX);
   const sub = relay.sub([{ kinds: [1], "#p": [botPubkey]}]);
 
-  sub.on("event", (ev) => {
+  sub.on("event", async (ev) => {
     try {
       // リプライしても安全なら、リプライイベントを組み立てて送信する
       if (isSafeToReply(ev)) {
-        const replyPost = composeReplyPost("Hello", ev);
+        const openAIResponse = await getOpenAIResponse(ev.content);
+        console.log(ev.content);
+        const replyPost = composeReplyPost(openAIResponse, ev);
+        console.log(openAIResponse);
         publishToRelay(relay, replyPost);
       }
     } catch (err) {
@@ -104,5 +126,4 @@ const main = async () => {
     }
   });
 };
-
 main().catch((e) => console.error(e));
