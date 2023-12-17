@@ -7,11 +7,14 @@ const {
   nip19
 } = require("nostr-tools");
 require("websocket-polyfill");
+require('dotenv').config();
+
 
 /* 自分の秘密鍵をhex形式に変換して、ここに設定*/
-const PRIVATE_KEY_HEX = ???;
+const PRIVATE_KEY_HEX = process.env.PRIVATE_KEY_HEX;
 
-const relayUrl = "wss://relay-jp.nostr.wirednet.jp";
+// const relayUrl = "wss://relay-jp.nostr.wirednet.jp";
+const relayUrl = "wss://r.kojira.io";
 
 /**
  * テキスト投稿イベント(リプライ)を組み立てる
@@ -30,9 +33,9 @@ const composeReplyPost = (content, targetPubkey, targetEventId) => {
     content,
     tags: [
       /* Q-1: リプライ対象の公開鍵を指すpタグを書いてみよう */
-      [???],
+      ["p",targetPubkey,"" ],
       /* Q-2: リプライ対象の投稿を指すeタグを書いてみよう */
-      [???],
+      ["e",targetEventId,""],
     ],
     created_at: currUnixtime(),
   };
@@ -56,8 +59,8 @@ const main = async (content) => {
     // ヒント-1: まずは、1-3節の演習で作った投稿にリプライしてみるといいでしょう。必要な2つのデータはログに出力されたイベントの中にあります
     // ヒント-2: 「リプライ実装チェッカー(bot)」の投稿にリプライすると、実装が正しいか判定してリプライで結果を教えてくれます。詳しくはREADMEの「ヒント」の項を参照してください
     // ヒント-3: npmスクリプト sub-reply を使って自分へのリプライを確認できます。詳しくはREADMEの「npmスクリプト」の項を参照してください
-    "???(リプライ対象の公開鍵)",
-    "???(リプライ対象の投稿のイベントID)"
+    "d1d1747115d16751a97c239f46ec1703292c3b7e9988b9ebdd4ec4705b15ed44",
+    "3b98cedbcdc85639a3b8ce94e7ce1d956859e484c120bab9b0add7900e4af0aa"
   );
   const pub = relay.publish(replyPost);
 
